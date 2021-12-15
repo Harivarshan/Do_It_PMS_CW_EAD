@@ -1,5 +1,10 @@
 ﻿@page "/project"
 
+@using Models
+@using Bussiness.Repository.IRepository
+@inject IProjectRepository ProjectRepository
+
+
 <div class="row mt-4">
     <div class="col-8">
         <h4 class="card-title text-info"> Project Information</h4>
@@ -8,8 +13,49 @@
         <NavLink href="project/create" class="btn btn-info form-control">Add New Project</NavLink>
     </div>
 </div>
-<h3>Project View</h3>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Projects.Any())
+                {
+                    foreach (var project in Projects)
+                    {
+                <tr>
+                    <td>@project.projectId</td>
+                    <td>@project.projectName</td>
+                    <td>@project.projectDescription</td>
+                    <td>
+                        <NavLink href="@($"project/edit/{project.projectId}")" class="btn btn-primary">Edit</NavLink>
+                    </td>
+                </tr>
+                    }
+                }
+                else
+                {
+                <tr>
+                    <td>No Records Created yet</td>
+                </tr>                  
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
 
 @code {
+    private IEnumerable<ProjectDTO> Projects { get; set; } = new List<ProjectDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Projects = await ProjectRepository.GetAllProject();
+    }
 
 }

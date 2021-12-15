@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Bussiness.Repository;
+using Bussiness.Repository.IRepository;
 
 namespace Coursework_EAD
 {
@@ -32,6 +34,7 @@ namespace Coursework_EAD
             services.AddDbContext<ApplicationDbContext>(options=>
                 options.UseSqlServer(Configuration.GetConnectionString("DefualtConnection")));
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();

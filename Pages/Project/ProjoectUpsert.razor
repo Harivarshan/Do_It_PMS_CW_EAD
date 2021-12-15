@@ -1,0 +1,86 @@
+﻿@page "/project/create"
+@page "/project/edit/{Id:int}"
+@using Models
+@using Bussiness.Repository.IRepository
+@inject IProjectRepository ProjectRepository
+@inject NavigationManager NavigationManager
+
+<div class="row mt-2 mb-5">
+    <h3 class="card-title text-info mb-3 ml-3">@Title Project</h3>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="ProjectModel" OnValidSubmit="HandleProjectUpsert">
+                    <DataAnnotationsValidator />
+                    @*<ValidationSummary/>*@
+                    <div class="form-group">
+                        <label>Name</label>
+                        <InputText @bind-Value="ProjectModel.projectName" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ProjectModel.projectName"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>Descritption</label>
+                        <InputText @bind-Value="ProjectModel.projectDescription" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ProjectModel.projectDescription"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary">@Title Project </button>
+                        <NavLink href="project" class="btn btn-secondary">Back to Index</NavLink>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private ProjectDTO ProjectModel { get; set; } = new ProjectDTO();
+    private string Title { get; set; } = "Create";
+
+    [Parameter]
+    public int? Id { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // We dynamically set the title here if we come from a valid update link and retrieve the object of choice
+        if (Id != null)
+        {
+            Title = "Update";
+            ProjectModel = await ProjectRepository.GetProject(Id.Value);
+        }
+        else
+        {
+            // else we just provide a blank object
+            ProjectModel = new ProjectDTO();
+        }
+    }
+
+    // here we make sure the onject is unique and then we create the object and navigate to it.
+    private async Task HandleProjectUpsert()
+    {
+
+        try
+        {
+            //var projectDetailsByName = await ProjectRepository.isProjectUnique(ProjectModel.projectName, ProjectModel.projectId);
+
+            if (ProjectModel.projectId != 0 && Title=="Update")
+            {
+
+            }
+        }
+        catch(Exception ex){
+            // log excpetion
+        }
+        var projectDetailsByName = await ProjectRepository.isProjectUnique(ProjectModel.projectName);
+        if (projectDetailsByName != null)
+        {
+            //do somethign for null case
+        }
+        var createdResult = await ProjectRepository.CreateProject(ProjectModel);
+        NavigationManager.NavigateTo("project");
+
+    }
+}
