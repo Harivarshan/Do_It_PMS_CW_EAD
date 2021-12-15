@@ -2,7 +2,7 @@
     if (type === "success") {
         toastr.success(message, "Operation Successful");
     }
-    if (type === "failed") {
+    if (type === "error") {
         toastr.error(message, "Operation Failed");
     }
 }

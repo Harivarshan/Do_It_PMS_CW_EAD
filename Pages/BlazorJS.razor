@@ -36,13 +36,15 @@
     {
         ConfirmResult = await JsRuntime.InvokeAsync<bool>("confirm", ConfirmMessage);
     }
+
     private async Task TestSuccess()
     {
         await JsRuntime.InvokeVoidAsync("ShowToastr", "success", "Success Message");
     }
+
     private async Task TestFailure()
     {
-        await JsRuntime.InvokeVoidAsync("ShowToastr", "failed", "Error Message");
+        await JsRuntime.InvokeVoidAsync("ShowToastr", "error", "Error Message");
     }
 }
 
