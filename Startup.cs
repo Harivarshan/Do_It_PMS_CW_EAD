@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Bussiness.Repository;
 using Bussiness.Repository.IRepository;
+using Coursework_EAD.Service.IService;
+using Coursework_EAD.Service;
 
 namespace Coursework_EAD
 {
@@ -31,10 +33,21 @@ namespace Coursework_EAD
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            //DB Access
             services.AddDbContext<ApplicationDbContext>(options=>
                 options.UseSqlServer(Configuration.GetConnectionString("DefualtConnection")));
+
+            //DB Mapper
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            //DB Entities
             services.AddScoped<IProjectRepository, ProjectRepository>();
+            services.AddScoped<ITicketRepository, TicketRepository>();
+            services.AddScoped<ITicketImageRepository, TicketImageRepository>();
+
+            //Upload Service
+            services.AddScoped<IFileUpload, FileUpload>();
+
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
