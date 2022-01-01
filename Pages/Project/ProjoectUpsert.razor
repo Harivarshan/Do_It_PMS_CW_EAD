@@ -4,6 +4,7 @@
 @using Bussiness.Repository.IRepository
 @inject IProjectRepository ProjectRepository
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 
 <div class="row mt-2 mb-5">
     <h3 class="card-title text-info mb-3 ml-3">@Title Project</h3>
@@ -12,7 +13,7 @@
             <div class="card-body">
                 <EditForm Model="ProjectModel" OnValidSubmit="HandleProjectUpsert">
                     <DataAnnotationsValidator />
-                    @*<ValidationSummary/>*@
+                    <ValidationSummary/>
                     <div class="form-group">
                         <label>Name</label>
                         <InputText @bind-Value="ProjectModel.projectName" class="form-control"></InputText>
@@ -64,22 +65,31 @@
 
         try
         {
-            //var projectDetailsByName = await ProjectRepository.isProjectUnique(ProjectModel.projectName, ProjectModel.projectId);
-
-            if (ProjectModel.projectId != 0 && Title=="Update")
+            var projectDetailsByName = await ProjectRepository.isProjectUnique(ProjectModel.projectName, ProjectModel.projectId);
+            if (projectDetailsByName != null)
             {
+                await JsRuntime.ToastrError("Project name already exists!");
+                return;
+            }
+
+            if (ProjectModel.projectId != 0 && Title == "Update")
+            {
+                var updateProjectResult = await ProjectRepository.UpdateProject(ProjectModel.projectId, ProjectModel);
+                await JsRuntime.ToastrSuccess("Project details update succesful");
 
             }
+            else
+            {
+                var createdResult = await ProjectRepository.CreateProject(ProjectModel);
+                await JsRuntime.ToastrSuccess("Project details create succesful");
+            }
         }
-        catch(Exception ex){
+        catch (Exception ex)
+        {
             // log excpetion
         }
-        var projectDetailsByName = await ProjectRepository.isProjectUnique(ProjectModel.projectName);
-        if (projectDetailsByName != null)
-        {
-            //do somethign for null case
-        }
-        var createdResult = await ProjectRepository.CreateProject(ProjectModel);
+
+
         NavigationManager.NavigateTo("project");
 
     }
