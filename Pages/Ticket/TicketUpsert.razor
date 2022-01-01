@@ -1,0 +1,209 @@
+﻿@page "/ticket/create"
+@page "/ticket/edit/{Id:int}"
+@using Models
+@using Bussiness.Repository.IRepository
+@using Coursework_EAD.Service.IService
+@inject ITicketRepository TicketRepository
+@inject ITicketImageRepository TicketImageRepository
+@inject IProjectRepository ProjectRepository
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject IFileUpload FileUpload
+
+<div class="row mt-2 mb-5">
+    <h3 class="card-title text-info mb-3 ml-3">@Title Ticket</h3>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="TicketModel" OnValidSubmit="HandleProjectUpsert">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="form-group">
+                        <label>Title</label>
+                        <InputText @bind-Value="TicketModel.title" class="form-control"></InputText>
+                        <ValidationMessage For="() => TicketModel.title"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>Descritption</label>
+                        <InputText @bind-Value="TicketModel.description" class="form-control"></InputText>
+                        <ValidationMessage For="() => TicketModel.description"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>Project</label>
+                        <InputSelect @bind-Value="TicketModel.projectId" class="form-control">
+                            <option value=""> Select Project</option>
+                            @foreach (var project in Projects)
+                            {
+                                <option value="@project.projectId">@project.projectName</option>
+                            }
+                        </InputSelect>
+                            <ValidationMessage For="() => TicketModel.projectId"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                                <InputFile OnChange="HandleImageUpload" multiple></InputFile>
+                                <div class="row">
+                                    @if(TicketModel.imageURLs!=null && TicketModel.imageURLs.Count > 0) {
+                                        int serial = 1;
+                                        foreach (var ticketImage in TicketModel.imageURLs) { 
+                                    <div class="col-md-2 mt-3">
+                                        <div class="ticket-image" style="background: url('@ticketImage') 50% 50%; ">
+                                            <span class="ticket-image-title">@serial</span>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger btn-block mt-4">
+                                            Delete
+                                        </button>
+                                    </div>
+                                            serial++;
+
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        <div class="form-group">
+                            <button class="btn btn-primary">@Title Ticket </button>
+                            <NavLink href="project" class="btn btn-secondary">Back to Index</NavLink>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @code {
+
+        private TicketDTO TicketModel { get; set; } = new TicketDTO();
+        private TicketImageDTO TicketImage { get; set; } = new TicketImageDTO();
+        // make sure to change it as only on admin and logged in user and optimize only for titles
+        private IEnumerable<ProjectDTO> Projects { get; set; } = new List<ProjectDTO>();
+        private string Title { get; set; } = "Create";
+
+        [Parameter]
+        public int? Id { get; set; }
+
+
+
+        protected override async Task OnInitializedAsync()
+        {
+            Projects = await ProjectRepository.GetAllProject();
+            // We dynamically set the title here if we come from a valid update link and retrieve the object of choice
+            if (Id != null)
+            {
+                Title = "Update";
+                TicketModel = await TicketRepository.GetTicket(Id.Value);
+            }
+            else
+            {
+                // else we just provide a blank object
+                TicketModel = new TicketDTO();
+            }
+        }
+
+        // here we make sure the onject is unique and then we create the object and navigate to it.
+        private async Task HandleProjectUpsert()
+        {
+
+            try
+            {
+                var ticketDetailsByName = await TicketRepository.isTicketUnique(TicketModel.title, TicketModel.Id, TicketModel.projectId);
+                if (ticketDetailsByName != null)
+                {
+                    await JsRuntime.ToastrError("Ticket already exists! Try adding a different title or change the project");
+                    return;
+                }
+
+                if (TicketModel.projectId != 0 && Title == "Update")
+                {
+                    //update
+
+                    var updateProjectResult = await TicketRepository.UpdateTicket(TicketModel.Id, TicketModel);
+                    await JsRuntime.ToastrSuccess("Ticket details update succesful");
+
+                }
+                else
+                {
+                    //create
+
+                    var createdResult = await TicketRepository.CreateTicket(TicketModel);
+                    await AddTicketImage(createdResult);
+                    await JsRuntime.ToastrSuccess("Project details create succesful");
+
+                }
+            }
+            catch (Exception ex)
+            {
+                // log excpetion
+            }
+
+
+            NavigationManager.NavigateTo("ticket");
+
+        }
+
+        private async Task HandleImageUpload(InputFileChangeEventArgs e)
+        {
+            try
+            {
+                var images = new List<string>();
+                if (e.GetMultipleFiles().Count > 0)
+                {
+                    foreach (var file in e.GetMultipleFiles())
+                    {
+
+                        System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
+
+                        if (fileInfo.Extension.ToLower() == ".jpg" ||
+                                fileInfo.Extension.ToLower() == ".png" ||
+                                fileInfo.Extension.ToLower() == ".jpeg")
+                        {
+                            var UploadedImagePath = await FileUpload.UploadFile(file);
+                            images.Add(UploadedImagePath);
+                        }
+                        else
+                        {
+                            await JsRuntime.ToastrError("Please select .jpg / .jpeg / png formats only");
+                        }
+                    }
+
+                    if (images.Any())
+                    {
+                        if (TicketModel.imageURLs != null && TicketModel.imageURLs.Any())
+                        {
+                            TicketModel.imageURLs.AddRange(images);
+                        }
+                        else
+                        {
+                            TicketModel.imageURLs = new List<String>();
+                            TicketModel.imageURLs.AddRange(images);
+                        }
+                    }
+                    else {
+                        await JsRuntime.ToastrError("Image uploading failed");
+                    }
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                await JsRuntime.ToastrError(ex.Message);
+            }
+
+        }
+
+        private async Task AddTicketImage(TicketDTO ticketDetails) 
+        {
+            foreach (var imageUrl in TicketModel.imageURLs) 
+            {
+                TicketImage = new TicketImageDTO()
+                {
+                    ticketId = ticketDetails.Id,
+                    ticketImageUrl = imageUrl
+                };
+                await TicketImageRepository.CreateTicketImage(TicketImage);
+            }
+        }
+        
+
+
+    }

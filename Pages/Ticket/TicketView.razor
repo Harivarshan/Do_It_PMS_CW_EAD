@@ -1,0 +1,63 @@
+﻿@page "/ticket"
+
+@using Models
+@using Bussiness.Repository.IRepository
+@inject ITicketRepository TicketRepository   
+
+
+<div class="row mt-4">
+    <div class="col-8">
+        <h4 class="card-title text-info"> Ticket Information</h4>
+    </div>
+    <div class="col-3 offset-1">
+        <NavLink href="ticket/create" class="btn btn-info form-control">Add New Ticket</NavLink>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>images</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Tickets.Any())
+                {
+                    foreach (var ticket in Tickets)
+                    {
+                <tr>
+                    <td>@ticket.Id</td>
+                    <td>@ticket.title</td>
+                    <td>@ticket.description</td>
+                    <td>@ticket.ticketImageUrl</td>
+                    <td>
+                        <NavLink href="@($"ticket/edit/{ticket.Id}")" class="btn btn-primary">Edit</NavLink>
+                    </td>
+                </tr>
+                    }
+                }
+                else
+                {
+                <tr>
+                    <td colspan="6">No Records Created yet</td>
+                </tr>                  
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private IEnumerable<TicketDTO> Tickets { get; set; } = new List<TicketDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tickets = await TicketRepository.GetAllTickets();
+    }
+
+}
